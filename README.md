@@ -33,7 +33,7 @@ npm run verify
 
 ## AWS 아키텍처
 
-![AWS architecture](docs/architecture.png)
+![AWS architecture](docs/architecture-readme.png)
 
 | 리소스 | 값 |
 |---|---|
