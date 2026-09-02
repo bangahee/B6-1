@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 1600 900">
+  <rect width="1600" height="900" fill="#f3f0e9"/>
+  <text x="90" y="92" fill="#111a24" font-family="Arial, sans-serif" font-size="24" font-weight="700">B6-1 · AWS CLOUD ARCHITECTURE</text>
+  <text x="90" y="138" fill="#526170" font-family="Arial, sans-serif" font-size="18">Region: Asia Pacific (Seoul) · ap-northeast-2</text>
+
+  <rect x="400" y="200" width="1100" height="590" rx="24" fill="#111a24"/>
+  <text x="445" y="250" fill="#d9ff43" font-family="Arial, sans-serif" font-size="18" font-weight="700">VPC · 10.0.0.0/16</text>
+
+  <rect x="460" y="300" width="970" height="400" rx="18" fill="#182634" stroke="#50606f" stroke-width="2"/>
+  <text x="500" y="348" fill="#ffffff" font-family="Arial, sans-serif" font-size="17" font-weight="700">PUBLIC SUBNET · 10.0.1.0/24</text>
+
+  <rect x="535" y="410" width="260" height="170" rx="12" fill="#223444" stroke="#d9ff43" stroke-width="2"/>
+  <text x="570" y="458" fill="#9faeba" font-family="Arial, sans-serif" font-size="15">ROUTE TABLE</text>
+  <text x="570" y="500" fill="#ffffff" font-family="Arial, sans-serif" font-size="18" font-weight="700">10.0.0.0/16 → local</text>
+  <text x="570" y="536" fill="#d9ff43" font-family="Arial, sans-serif" font-size="18" font-weight="700">0.0.0.0/0 → IGW</text>
+
+  <rect x="975" y="385" width="350" height="220" rx="16" fill="#f3f0e9" stroke="#d9ff43" stroke-width="4"/>
+  <text x="1015" y="430" fill="#3558ff" font-family="Arial, sans-serif" font-size="14" font-weight="700">SECURITY GROUP</text>
+  <text x="1015" y="470" fill="#111a24" font-family="Arial, sans-serif" font-size="25" font-weight="700">EC2 + Nginx</text>
+  <text x="1015" y="510" fill="#526170" font-family="Arial, sans-serif" font-size="16">HTTP 80 ← 0.0.0.0/0</text>
+  <text x="1015" y="540" fill="#526170" font-family="Arial, sans-serif" font-size="16">SSH 22 ← My IP/32</text>
+  <text x="1015" y="570" fill="#168f37" font-family="Arial, sans-serif" font-size="16" font-weight="700">GET /health → 200 OK</text>
+
+  <circle cx="220" cy="495" r="95" fill="#3558ff"/>
+  <text x="220" y="488" fill="#ffffff" font-family="Arial, sans-serif" text-anchor="middle" font-size="22" font-weight="700">INTERNET</text>
+  <text x="220" y="520" fill="#dfe4ff" font-family="Arial, sans-serif" text-anchor="middle" font-size="15">External user</text>
+
+  <rect x="345" y="445" width="170" height="100" rx="50" fill="#d9ff43"/>
+  <text x="430" y="486" fill="#111a24" font-family="Arial, sans-serif" text-anchor="middle" font-size="16" font-weight="700">INTERNET</text>
+  <text x="430" y="514" fill="#111a24" font-family="Arial, sans-serif" text-anchor="middle" font-size="16" font-weight="700">GATEWAY</text>
+
+  <path d="M315 495 H345" stroke="#3558ff" stroke-width="5"/>
+  <path d="M515 495 H535" stroke="#d9ff43" stroke-width="5"/>
+  <path d="M795 495 H975" stroke="#d9ff43" stroke-width="5"/>
+  <polygon points="975,495 950,482 950,508" fill="#d9ff43"/>
+
+  <text x="90" y="835" fill="#526170" font-family="Arial, sans-serif" font-size="16">Traffic flow: External user → Internet Gateway → Public route → Security Group → EC2/Nginx</text>
+</svg>
