@@ -37,11 +37,32 @@ Internet Gateway만 연결했다고 웹사이트가 공개되는 것은 아니�
 
 ### A. 시작 전 확인
 
-1. AWS 콘솔 오른쪽 위에서 로그인 사용자가 `<IAM_USER_NAME>`인지 확인한다.
-2. `root`로 로그인되어 있으면 로그아웃하고 IAM 사용자로 다시 로그인한다.
+이 단계에서는 계정을 한 번 전환한다. **Billing 확인은 root**, VPC와 EC2 작업은 **`<IAM_USER_NAME>`**으로 한다.
+
+#### A-1. root로 Billing만 확인
+
+1. 프로젝트용 IAM 사용자로 로그인되어 있다면 로그아웃한다.
+2. AWS 로그인 화면에서 **Root user**를 선택하고 root 이메일과 MFA로 로그인한다.
+3. **Billing and Cost Management**를 열고 다음을 확인한다.
+   - Credits: 사용 가능한 크레딧과 만료일
+   - Bills: 현재 Charges by service
+   - Budgets: Zero spend budget
+   - Billing preferences: Free Tier usage alerts
+4. Billing 확인이 끝나면 root에서 즉시 로그아웃한다.
+
+root는 Billing과 계정 관리에만 사용한다. VPC, Subnet, Security Group 또는 EC2를 root로 만들지 않는다.
+
+#### A-2. IAM 사용자로 다시 로그인
+
+1. **IAM user** 로그인 방식으로 `<IAM_USER_NAME>`에 로그인한다.
+2. AWS 콘솔 오른쪽 위에 본인의 프로젝트용 IAM 사용자 이름이 표시되는지 확인한다.
 3. 오른쪽 위 Region 메뉴에서 **Asia Pacific (Seoul) / `ap-northeast-2`**를 선택한다.
-4. Billing에서 크레딧, Zero spend budget, Free Tier usage alerts, 현재 청구액을 확인한다.
-5. Mac의 Terminal에서 로컬 빌드를 확인한다.
+
+프로젝트용 IAM 사용자에서 Billing을 열면 `You need permissions`가 나오는 것이 정상이다. 이 사용자는 EC2/VPC 최소 권한만 갖고 있으므로 Billing 권한을 추가하지 않는다.
+
+#### A-3. Mac에서 로컬 준비 확인
+
+Mac의 Terminal에서 로컬 빌드를 확인한다.
 
 ```bash
 cd <PROJECT_DIRECTORY>
@@ -64,7 +85,7 @@ IAM과 Billing은 전역 서비스이므로 URL에 `us-east-1`이 보일 수 있
 curl https://checkip.amazonaws.com
 ```
 
-예를 들어 `203.0.113.10`이 출력되면 SSH Source에는 `203.0.113.10/32`를 입력한다. `/32`는 그 IP 하나만 허용한다는 뜻이다. 네트워크나 VPN을 바꾸면 IP도 바뀔 수 있다.
+명령이 출력한 IP가 `<YOUR_PUBLIC_IP>`라면 SSH Source에는 `<YOUR_PUBLIC_IP>/32`를 입력한다. `/32`는 그 IP 하나만 허용한다는 뜻이다. 네트워크나 VPN을 바꾸면 IP도 바뀔 수 있다.
 
 ### B. VPC 만들기
 
@@ -255,10 +276,10 @@ cd <PROJECT_DIRECTORY>
 ./scripts/deploy-ec2.sh ~/Downloads/cloud-lab-key.pem 실제_PUBLIC_IP
 ```
 
-예를 들어 AWS가 `203.0.113.25`를 표시했다면 다음과 같이 실행한다.
+`<PUBLIC_IP>`는 AWS가 현재 인스턴스에 표시한 실제 Public IPv4로 바꾼다.
 
 ```bash
-./scripts/deploy-ec2.sh ~/Downloads/cloud-lab-key.pem 203.0.113.25
+./scripts/deploy-ec2.sh ~/Downloads/cloud-lab-key.pem <PUBLIC_IP>
 ```
 
 예시 IP를 그대로 사용하지 않는다. 처음 연결할 때 SSH가 서버 fingerprint 확인을 요청하면 IP가 본인의 EC2인지 확인한 뒤 `yes`를 입력한다.
@@ -317,7 +338,7 @@ README에 검증 방식, 당시 URL/IP, 검증 일시(KST), 응답 결과를 기
 리소스를 삭제하면 Public IP는 더 이상 작동하지 않는다. 다음처럼 삭제 사실도 함께 기록한다.
 
 ```text
-2026-09-04 15:30 KST에 http://203.0.113.25/health로 외부 접속을 검증했고
+<YYYY-MM-DD HH:MM KST>에 http://<PUBLIC_IP>/health로 외부 접속을 검증했고
 HTTP 200 및 OK 응답을 확인했다. 증빙 저장 후 과금 방지를 위해 AWS 리소스를 삭제했다.
 ```
 
@@ -379,16 +400,17 @@ AWS가 VPC와 함께 자동 생성한 main route table, default network ACL, def
 
 ## 0. 배포 전 확인
 
-- [ ] 루트 계정이 아닌 실습용 IAM 사용자로 로그인했다.
-- [ ] 리전이 `Asia Pacific (Seoul) / ap-northeast-2`다.
-- [ ] Billing → Credits에 사용 가능한 크레딧이 표시된다.
-- [ ] Zero spend budget과 Free Tier usage alerts가 활성화되어 있다.
+- [ ] root로 Billing → Credits의 크레딧과 만료일을 확인했다.
+- [ ] root로 Bills, Zero spend budget, Free Tier usage alerts를 확인했다.
+- [ ] Billing 확인 후 root에서 로그아웃했다.
+- [ ] `<IAM_USER_NAME>` 프로젝트용 IAM 사용자로 다시 로그인했다.
+- [ ] VPC/EC2 리전이 `Asia Pacific (Seoul) / ap-northeast-2`다.
 - [ ] 로컬에서 `npm run verify:ec2`가 성공한다.
 - [ ] 현재 공인 IPv4를 확인해 SSH 규칙에 사용할 `/32` 값을 준비했다.
 
 ## 1. IAM 최소 권한
 
-1. IAM에서 `<IAM_USER_NAME>` 사용자를 만든다.
+1. IAM에서 `<IAM_USER_NAME>` 프로젝트용 사용자를 만든다.
 2. 콘솔 접근을 활성화하고 MFA를 등록한다.
 3. `AdministratorAccess`를 연결하지 않는다.
 4. [`../infra/iam-policy.json`](../infra/iam-policy.json)의 사용자 정의 정책만 연결한다.
