@@ -11,7 +11,8 @@
     "build:ec2": "next build",
     "start": "vinext start",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern out",
-    "verify": "bash scripts/verify-local.sh"
+    "verify": "bash scripts/verify-local.sh",
+    "verify:ec2": "bash scripts/verify-ec2-build.sh"
   },
   "dependencies": {
     "next": "16.2.6",

@@ -31,6 +31,14 @@ npm run dev
 npm run verify
 ```
 
+개발 서버 없이 EC2에 업로드할 정적 결과물까지 한 번에 검증:
+
+```bash
+npm run verify:ec2
+```
+
+이 명령은 `out/`을 새로 빌드하고 임시 로컬 서버에서 `/`와 `/health`를 확인한 뒤 서버를 자동으로 종료한다.
+
 ## AWS 아키텍처
 
 ![AWS architecture](docs/architecture-readme.png)
@@ -58,6 +66,8 @@ npm run verify
 
 ## EC2용 정적 빌드
 
+배포 기준 OS는 **Ubuntu Server 24.04 LTS**다. 인스턴스 유형은 생성 시점에 AWS 콘솔에서 이 계정에 대해 Free Tier 대상으로 표시되는 micro 유형을 선택한다.
+
 ```bash
 npm run build:ec2
 ```
@@ -72,6 +82,8 @@ chmod 400 /path/to/cloud-lab-key.pem
 ```
 
 수동으로 진행할 경우 [`infra/nginx.conf`](infra/nginx.conf)를 EC2의 `/etc/nginx/sites-available/b6-cloud`에 적용하고, `out/` 내용을 `/var/www/b6-cloud/`로 복사한다.
+
+AWS 화면에서 선택할 정확한 값과 검증 순서는 [`docs/aws-deployment-runbook.md`](docs/aws-deployment-runbook.md)에 정리했다. **Free Tier 크레딧 문제가 해결되기 전에는 리소스 생성 단계를 실행하지 않는다.**
 
 ## 외부 접속 검증
 
@@ -91,4 +103,5 @@ curl -i --connect-timeout 10 http://PUBLIC_IP/health
 - 아키텍처: [`docs/architecture.png`](docs/architecture.png)
 - 트러블슈팅: [`docs/troubleshooting.md`](docs/troubleshooting.md)
 - 정리 체크리스트: [`docs/cleanup-checklist.md`](docs/cleanup-checklist.md)
+- AWS 배포 실행서: [`docs/aws-deployment-runbook.md`](docs/aws-deployment-runbook.md)
 - 스크린샷: `docs/screenshots/`
