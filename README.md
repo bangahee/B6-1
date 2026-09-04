@@ -7,13 +7,12 @@
 - [x] 로컬 웹사이트 구현
 - [x] `/health` 엔드포인트 구현 (`200 OK`, 본문 `OK`)
 - [x] EC2용 정적 빌드 및 Nginx 배포 설정
-- [x] IAM 최소 권한 정책 초안
-- [x] 트러블슈팅 및 정리 문서 템플릿
-- [ ] AWS IAM 사용자/정책 적용
-- [ ] VPC와 Public Subnet 생성
-- [ ] EC2 생성 및 배포
-- [ ] 외부 접속 증빙 캡처
-- [ ] AWS 리소스 정리
+- [x] AWS IAM 최소 권한 사용자/정책 적용
+- [x] VPC와 Public Subnet 생성
+- [x] EC2 생성 및 Nginx 배포
+- [x] 내부 및 외부 `/health` 검증
+- [x] 트러블슈팅 보고서 작성
+- [x] AWS 리소스 정리 및 Billing 확인
 
 ## 로컬 실행
 
@@ -63,10 +62,11 @@ npm run verify:ec2
 - 전체 포트를 `0.0.0.0/0`에 허용하지 않는다.
 - `AdministratorAccess`를 사용하지 않는다.
 - 실습 정책은 [`infra/iam-policy.json`](infra/iam-policy.json)에 있다.
+- 인프라 생성·검증·삭제는 최소 권한 IAM 사용자로 수행했고, root는 Billing 확인에만 사용했다.
 
 ## EC2용 정적 빌드
 
-배포 기준 OS는 **Ubuntu Server 24.04 LTS**다. 인스턴스 유형은 생성 시점에 AWS 콘솔에서 이 계정에 대해 Free Tier 대상으로 표시되는 micro 유형을 선택한다.
+배포 OS는 **Ubuntu Server 24.04 LTS**, 인스턴스 유형은 **t3.micro**, 스토리지는 **8 GiB gp3**를 사용했다. 실습 당일 검증을 마친 뒤 모든 프로젝트 리소스를 삭제했다.
 
 ```bash
 npm run build:ec2
@@ -83,20 +83,20 @@ chmod 400 /path/to/cloud-lab-key.pem
 
 수동으로 진행할 경우 [`infra/nginx.conf`](infra/nginx.conf)를 EC2의 `/etc/nginx/sites-available/b6-cloud`에 적용하고, `out/` 내용을 `/var/www/b6-cloud/`로 복사한다.
 
-AWS 화면에서 선택할 정확한 값과 검증 순서는 [`docs/aws-deployment-runbook.md`](docs/aws-deployment-runbook.md)에 정리했다. **Free Tier 크레딧 문제가 해결되기 전에는 리소스 생성 단계를 실행하지 않는다.**
+AWS 화면에서 선택한 값과 검증·정리 순서는 [`docs/aws-deployment-runbook.md`](docs/aws-deployment-runbook.md)에 정리했다. EC2에서 `apt-get update`와 Nginx 설치가 성공해 Public Subnet의 아웃바운드 인터넷 통신도 확인했다.
 
 ## 외부 접속 검증
 
 - 선택 방식: **B — GET `/health`**
-- 검증 URL: `http://[PUBLIC_IP]/health`
-- 기대 결과: `HTTP 200`, 본문 `OK`
-- 실제 검증 일시: `[YYYY-MM-DD HH:MM KST]`
+- 검증 URL: `http://13.209.99.107/health`
+- 실제 결과: `HTTP 200`, 본문 `OK`
+- 실제 검증 일시: `2026-09-04 16:08 KST`
 
 ```bash
-curl -i --connect-timeout 10 http://PUBLIC_IP/health
+curl -i --connect-timeout 10 http://13.209.99.107/health
 ```
 
-외부 접속 스크린샷은 `docs/screenshots/`에 저장한다. 리소스 정리 후 URL이 동작하지 않는 것은 정상이다.
+외부 접속 결과는 [`docs/screenshots/05-external-health.png`](docs/screenshots/05-external-health.png)에 저장했다. `2026-09-04 16:50 KST`에 과금 방지를 위해 EC2, EBS와 사용자 정의 VPC 리소스를 삭제했으므로 현재 이 URL이 동작하지 않는 것은 정상이다. 정리 직후 확인한 월 예상 청구액은 `USD 0.00`이었으며, Billing 반영 지연을 고려해 다음 날 다시 확인한다.
 
 ## 제출 자료
 
@@ -104,4 +104,4 @@ curl -i --connect-timeout 10 http://PUBLIC_IP/health
 - 트러블슈팅: [`docs/troubleshooting.md`](docs/troubleshooting.md)
 - 정리 체크리스트: [`docs/cleanup-checklist.md`](docs/cleanup-checklist.md)
 - AWS 배포 실행서: [`docs/aws-deployment-runbook.md`](docs/aws-deployment-runbook.md)
-- 스크린샷: `docs/screenshots/`
+- 스크린샷 목록: [`docs/screenshots/README.md`](docs/screenshots/README.md)

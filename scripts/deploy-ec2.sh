@@ -25,7 +25,7 @@ scp "${SSH_OPTIONS[@]}" -r out/. "$EC2_USER@$PUBLIC_IP":/tmp/b6-cloud-out/
 scp "${SSH_OPTIONS[@]}" infra/nginx.conf "$EC2_USER@$PUBLIC_IP":/tmp/b6-cloud-nginx.conf
 
 ssh "${SSH_OPTIONS[@]}" "$EC2_USER@$PUBLIC_IP" \
-  'sudo apt-get update && sudo apt-get install -y nginx && sudo rm -rf /var/www/b6-cloud && sudo mkdir -p /var/www/b6-cloud && sudo cp -R /tmp/b6-cloud-out/. /var/www/b6-cloud/ && sudo cp /tmp/b6-cloud-nginx.conf /etc/nginx/sites-available/b6-cloud && sudo ln -sfn /etc/nginx/sites-available/b6-cloud /etc/nginx/sites-enabled/b6-cloud && sudo rm -f /etc/nginx/sites-enabled/default && sudo nginx -t && sudo systemctl enable --now nginx && curl --fail http://localhost/health'
+  'sudo apt-get update && sudo apt-get install -y nginx && sudo rm -rf /var/www/b6-cloud && sudo mkdir -p /var/www/b6-cloud && sudo cp -R /tmp/b6-cloud-out/. /var/www/b6-cloud/ && sudo cp /tmp/b6-cloud-nginx.conf /etc/nginx/sites-available/b6-cloud && sudo ln -sfn /etc/nginx/sites-available/b6-cloud /etc/nginx/sites-enabled/b6-cloud && sudo rm -f /etc/nginx/sites-enabled/default && sudo nginx -t && sudo systemctl enable --now nginx && sudo systemctl reload nginx && curl --fail http://localhost/health'
 
 printf '\nDeployment complete. Verify externally:\n'
 printf 'curl -i http://%s/health\n' "$PUBLIC_IP"

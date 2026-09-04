@@ -1,54 +1,62 @@
 # 트러블슈팅 보고서
 
-> AWS 실습 중 실제 발생한 내용으로 대괄호 부분을 교체한다.
-
-## 사례 1: 외부 `/health` 요청 타임아웃
+## 사례 1: 외부 `/health` 요청이 404를 반환함
 
 ### 증상
 
-- 발생 시각: `[YYYY-MM-DD HH:MM KST]`
-- 외부 컴퓨터에서 `http://[PUBLIC_IP]/health` 호출 시 타임아웃이 발생했다.
+- 발생 시각: `2026-09-04 16:06 KST`
+- Mac에서 `http://13.209.99.107/health`를 호출했을 때 연결은 성공했지만 `HTTP/1.1 404 Not Found`가 반환됐다.
+- 응답의 `Server` 헤더는 `nginx/1.24.0 (Ubuntu)`였다.
 
 ### 원인 가설
 
-1. Nginx가 실행되지 않았을 수 있다.
-2. Security Group에서 TCP/80이 허용되지 않았을 수 있다.
-3. Public Route Table에 Internet Gateway 경로가 없을 수 있다.
-4. EC2 인스턴스에 Public IPv4가 없을 수 있다.
+1. Nginx가 아직 기본 사이트 설정을 사용하고 있을 수 있다.
+2. `/health` 파일이 배포 경로에 복사되지 않았을 수 있다.
+3. 새 Nginx 설정 파일의 문법이 잘못됐을 수 있다.
+4. Security Group 또는 Route Table 설정이 잘못됐을 수 있다.
 
 ### 검증
 
-EC2 내부에서 다음 명령을 실행했다.
+외부 요청에서 Nginx가 생성한 404 응답을 받았으므로 Public IPv4, Internet Gateway 경로와 Security Group의 TCP/80 통신은 정상이라고 판단했다. SSH로 EC2에 접속한 뒤 다음 명령을 실행했다.
 
 ```bash
-systemctl is-active nginx
+sudo nginx -t
+sudo systemctl reload nginx
 curl -i http://localhost/health
 ```
 
-- Nginx 상태: `[active/inactive]`
-- localhost 응답: `[결과]`
-- Public IPv4: `[있음/없음]`
-- Route Table `0.0.0.0/0 → IGW`: `[있음/없음]`
-- Security Group TCP/80 규칙: `[있음/없음]`
+- `sudo nginx -t`: 설정 문법 정상
+- 설정 reload 후 localhost 응답: `HTTP/1.1 200 OK`, 본문 `OK`
+- Public Route Table: `0.0.0.0/0 → Internet Gateway`, `Active`
+- Security Group: HTTP 80은 `0.0.0.0/0`, SSH 22는 개인 IP `/32`
 
 ### 확인된 원인
 
-`[검증으로 확인한 실제 원인]`
+배포 스크립트가 사용자 정의 사이트 설정을 설치한 뒤 `systemctl enable --now nginx`만 실행했다. 패키지 설치 과정에서 Nginx가 이미 기본 설정으로 시작된 경우 `enable --now`는 실행 중인 프로세스에 새 설정을 다시 읽게 하지 않는다. 따라서 외부 요청이 이전 설정으로 처리되어 `/health`가 404를 반환했다.
 
 ### 조치
 
-`[실제로 변경한 설정 또는 실행한 명령]`
+설정 문법을 검사한 뒤 Nginx를 reload했다.
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
 
 ### 결과
 
-외부에서 다시 호출한 결과 `[HTTP 상태와 응답 내용]`을 확인했다.
+- EC2 내부 검증: `2026-09-04 16:07 KST`, `HTTP/1.1 200 OK`, 본문 `OK`
+- 외부 Mac 검증: `2026-09-04 16:08 KST`, `HTTP/1.1 200 OK`, 본문 `OK`
 
 ### 재발 방지
 
-- 배포 전에 Public IPv4, Route Table, Security Group을 체크리스트로 확인한다.
-- `localhost` 검증 후 외부 네트워크에서 `/health`를 검증한다.
+- 배포 스크립트에서 설정 파일을 설치한 뒤 `sudo nginx -t`와 `sudo systemctl reload nginx`를 항상 실행한다.
+- 배포 완료 조건에 localhost `/health`와 외부 `/health` 검증을 모두 포함한다.
+- 404처럼 웹 서버가 직접 반환한 응답과 네트워크 타임아웃을 구분해 조사한다.
 
 ### 증빙
 
-- 장애 화면: `docs/screenshots/[파일명]`
-- 해결 화면: `docs/screenshots/[파일명]`
+- 내부 해결 확인: [`screenshots/04-local-health.png`](screenshots/04-local-health.png)
+- 외부 해결 확인: [`screenshots/05-external-health.png`](screenshots/05-external-health.png)
+- Route Table 확인: [`screenshots/02-route-table.png`](screenshots/02-route-table.png)
+- Security Group 확인: [`screenshots/03-security-group.png`](screenshots/03-security-group.png)
