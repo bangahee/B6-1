@@ -2,7 +2,7 @@
 
 서울 리전의 사용자 정의 VPC와 Public Subnet에 EC2를 배치하고, Nginx로 정적 웹사이트를 외부에 공개한 프로젝트다. 네트워크 구성, 접근 제어, IAM 최소 권한, 장애 분석, 외부 검증과 리소스 정리까지 클라우드 서비스의 전체 생명주기를 직접 수행했다.
 
-## 동료 평가용 한눈에 설명
+## 프로젝트 한눈에 설명
 
 > 서울 리전(`ap-northeast-2`)에 `10.0.0.0/16` VPC와 `10.0.1.0/24` Public Subnet을 만들었다. Subnet의 Route Table에 `0.0.0.0/0 → Internet Gateway` 경로를 연결하고 Public IPv4를 가진 EC2에서 Nginx를 실행했다. Security Group은 외부 웹 접속을 위한 HTTP 80만 전체 공개하고, 관리용 SSH 22는 학습자 공인 IP `/32` 하나로 제한했다. 외부 Mac에서 `GET /health`를 호출해 `HTTP 200 / OK`를 확인했으며, 증빙을 저장한 뒤 EC2, EBS와 사용자 정의 VPC 리소스를 삭제하고 Billing이 `USD 0.00`인 것을 확인했다.
 
@@ -78,6 +78,12 @@
 
 EC2의 아웃바운드 인터넷 통신은 배포 과정에서 `apt-get update`와 Nginx 설치가 성공한 것으로 확인했다. 즉, EC2가 외부 패키지 저장소에 요청을 보내고 응답을 받을 수 있었다.
 
+### Public Route Table 구성 증빙
+
+아래 화면에서 `0.0.0.0/0 → Internet Gateway` 경로가 `Active`이고, `cloud-lab-public-subnet`이 명시적으로 연결된 것을 확인할 수 있다.
+
+![Public Route Table의 기본 경로와 Subnet association](docs/screenshots/02-route-table.png)
+
 ## 3. EC2와 Nginx 배포 구조
 
 EC2는 Ubuntu Server 24.04 LTS, `t3.micro`, 8 GiB gp3 구성으로 생성했다. Public Subnet에 배치하고 자동 Public IPv4를 활성화했으며, 다운로드한 RSA `.pem` 키로 `ubuntu` 사용자에게 SSH 접속했다.
@@ -101,6 +107,12 @@ chmod 400 /path/to/cloud-lab-key.pem
 
 SSH 성공은 단순히 포트 22가 열렸다는 뜻만이 아니다. Public IPv4, IGW 경로, SSH Security Group 규칙, 올바른 사용자 이름, 일치하는 Private Key가 모두 정상이라는 뜻이다. 웹 응답 성공은 여기에 Nginx 프로세스와 사이트 설정까지 정상이라는 것을 추가로 보여준다.
 
+### EC2 실행 상태 증빙
+
+아래 화면은 서울 리전에서 `cloud-lab-web` EC2가 `Running` 상태이고 상태 검사를 통과했으며 Public IPv4가 할당된 당시의 기록이다.
+
+![서울 리전에서 실행 중인 EC2와 Public IPv4](docs/screenshots/01-ec2-running.png)
+
 ## 4. Security Group과 최소 노출 원칙
 
 ### 적용한 인바운드 규칙
@@ -120,6 +132,12 @@ SSH 성공은 단순히 포트 22가 열렸다는 뜻만이 아니다. Public IP
 - IPv6를 사용하지 않는 상태에서의 불필요한 `::/0` 규칙
 
 SSH나 데이터베이스 포트를 전 세계에 공개하면 자동 스캔, 무차별 대입, 취약점 공격 대상이 된다. SSH는 개인 IP `/32`, VPN, Bastion Host 또는 AWS Systems Manager Session Manager로 제한할 수 있다. 데이터베이스는 Public Internet에 공개하지 않고 Private Subnet에 두며, 애플리케이션 EC2의 Security Group만 Source로 허용하는 방식이 안전하다.
+
+### Security Group 규칙 증빙
+
+아래 화면에서 HTTP 80은 `0.0.0.0/0`, SSH 22는 가려진 개인 공인 IP 한 개의 `/32`로 설정된 것을 확인할 수 있다.
+
+![HTTP 80 공개와 SSH 22 개인 IP 제한 규칙](docs/screenshots/03-security-group.png)
 
 ## 5. Security Group과 IAM의 책임 분리
 
@@ -173,7 +191,19 @@ IAM 작업이 `AccessDenied`로 실패할 때는 관리자 권한을 바로 추�
 curl -i --connect-timeout 10 http://13.209.99.107/health
 ```
 
-외부 결과는 [`05-external-health.png`](docs/screenshots/05-external-health.png), EC2 내부 결과는 [`04-local-health.png`](docs/screenshots/04-local-health.png)에 저장했다. 증빙 저장 후 EC2를 종료했기 때문에 Public IPv4가 반환되었으며, 현재 이 URL이 동작하지 않는 것은 정상이다.
+### EC2 내부 검증 증빙
+
+SSH로 EC2에 접속해 Nginx 설정을 검사하고 `http://localhost/health`가 `HTTP/1.1 200 OK`와 `OK`를 반환하는 것을 확인했다.
+
+![EC2 내부 localhost health check 결과](docs/screenshots/04-local-health.png)
+
+### 외부 접속 검증 증빙
+
+Mac에서 당시 EC2 Public IPv4의 `/health`를 호출해 외부에서도 `HTTP/1.1 200 OK`와 `OK`가 반환되는 것을 확인했다.
+
+![외부 컴퓨터에서 실행한 health check 결과](docs/screenshots/05-external-health.png)
+
+증빙 저장 후 EC2를 종료했기 때문에 Public IPv4가 반환되었으며, 현재 이 URL이 동작하지 않는 것은 정상이다.
 
 ## 7. 이름·태그·체크리스트를 이용한 리소스 관리
 
@@ -221,7 +251,11 @@ EC2 종료
 - NAT Gateway, Load Balancer, RDS: 생성하지 않음
 - Billing: 정리 직후 예상 청구액 `USD 0.00`
 
-AWS 기본 VPC와 기본 구성 요소는 이번 프로젝트에서 만든 리소스가 아니므로 삭제하지 않았다. 사용자 정의 VPC가 사라지고 기본 VPC만 남은 화면은 [`06-cleanup.png`](docs/screenshots/06-cleanup.png)에 기록했다.
+AWS 기본 VPC와 기본 구성 요소는 이번 프로젝트에서 만든 리소스가 아니므로 삭제하지 않았다. 사용자 정의 VPC가 사라지고 기본 VPC만 남은 화면을 아래에 기록했다.
+
+### 사용자 정의 VPC 정리 증빙
+
+![프로젝트 VPC 삭제 후 기본 VPC만 남은 화면](docs/screenshots/06-cleanup.png)
 
 ## 8. 증상과 근거를 이용한 트러블슈팅
 
@@ -324,7 +358,11 @@ Billing에 예상하지 못한 비용이 나타나면 금액만 확인하지 않
 
 EC2를 Stop해도 연결된 EBS나 일부 네트워크 리소스 비용은 남을 수 있다. Elastic IP, NAT Gateway, Load Balancer와 RDS도 별도 과금 항목이므로 EC2 화면만 보고 정리가 끝났다고 판단하지 않는다.
 
-이번 실습에서는 증빙 저장 후 프로젝트 리소스를 모두 삭제했으며, `2026-09-04 16:50 KST`의 예상 청구액이 `USD 0.00`인 것을 [`07-billing.png`](docs/screenshots/07-billing.png)로 확인했다.
+이번 실습에서는 증빙 저장 후 프로젝트 리소스를 모두 삭제했으며, `2026-09-04 16:50 KST`의 예상 청구액이 `USD 0.00`인 것을 확인했다.
+
+### Billing 확인 증빙
+
+![리소스 정리 직후 AWS 예상 청구액 USD 0.00](docs/screenshots/07-billing.png)
 
 ## 11. 로컬 실행과 검증
 
