@@ -32,3 +32,4 @@ yarn-error.log*
 .vercel
 next-env.d.ts
 /dist/
+/docs/aws-deployment-runbook.local.md

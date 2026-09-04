@@ -62,7 +62,7 @@ npm run verify:ec2
 - 전체 포트를 `0.0.0.0/0`에 허용하지 않는다.
 - `AdministratorAccess`를 사용하지 않는다.
 - 실습 정책은 [`infra/iam-policy.json`](infra/iam-policy.json)에 있다.
-- 인프라 생성·검증·삭제는 최소 권한 IAM 사용자로 수행했고, root는 Billing 확인에만 사용했다.
+- 모든 VPC/EC2/Security Group 생성·검증·삭제 작업은 최소 권한 IAM 사용자로 수행했다. Root는 초기 계정 설정과 Billing 확인에만 사용했으며, 실습 리소스 작업에는 사용하지 않았다.
 
 ## EC2용 정적 빌드
 
